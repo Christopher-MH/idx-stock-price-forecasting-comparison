@@ -1,63 +1,44 @@
-import shutil
-import csv
-from datetime import datetime
 from pathlib import Path
 import pandas as pd
 
-preprocessing_file_path = Path(__file__).parent
-dataset_perbankan_path = preprocessing_file_path/"raw"/"perbankan"
-# dataset_energi_path = preprocessing_file_path/"raw"/"energi"
-dataset_energi_path = preprocessing_file_path/"test"
+def list_file_name(dataset, dataset_path):
+    for f in Path(dataset_path).glob("*.csv"):
+        dataset.append(f.name)
 
-# Function
-def daftar_nama_file(list_nama_file, path):
-    for f in Path(path).glob("*.csv"):
-        list_nama_file.append(f.name)
-
-def ubah_nama(list_nama_file, i):
-    tmp = list_nama_file[i].split("_")
+def convert_file_name(name, i):
+    tmp = name[i].split("_")
     tmp_2 = tmp[2].split(",")
-    nama_file = tmp_2[0]
-    nama_file = nama_file + ".csv"
-    return nama_file
+    new_name = tmp_2[0]
+    new_name = new_name + ".csv"
+    return new_name
+
+def clean_dataset(dataset, dataset_path, this_path):
+    for i in range(len(dataset)):
+        source_path = dataset_path/dataset[i]
+
+        file_name = convert_file_name(dataset, i)
+        destination_path = this_path/"processed"/file_name
+
+        df = pd.read_csv(source_path)
+
+        df["time"] = pd.to_datetime(df["time"], errors="coerce")
+        df = df.dropna(subset=["time", "open", "high", "low", "close", "Volume"])
+        df = df.drop_duplicates(subset=["time"])
+        df = df[(df["time"] >= "2020-04-01") & (df["time"] <= "2025-12-31")]
+        df = df.sort_values("time").reset_index(drop=True)
+
+        df.to_csv(destination_path, index=False)
 
 
-file_perbankan = []
-daftar_nama_file(file_perbankan, dataset_perbankan_path)
-file_energi = []
-daftar_nama_file(file_energi, dataset_energi_path)
-# print(file_perbankan)
-# print(file_energi)
+this_path = Path(__file__).parent
+banking_dataset_path = this_path/"raw"/"banking"
+energy_dataset_path = this_path/"raw"/"energy"
 
-for i in range(len(file_energi)):
-    source_path = dataset_energi_path/file_energi[i]
-    nama_file = ubah_nama(file_energi, i)
+banking_dataset = []
+energy_dataset = []
 
-    destination_path = preprocessing_file_path/"processed"/nama_file
-    print(destination_path)
+list_file_name(banking_dataset, banking_dataset_path)
+list_file_name(energy_dataset, energy_dataset_path)
 
-    shutil.copy(source_path, destination_path)
-
-    df = pd.read_csv(destination_path)
-
-    df["time"] = pd.to_datetime(df["time"], errors="coerce")
-
-    df = df[(df["time"] >= "2020-04-01") & (df["time"] <= "2025-12-30")]
-
-    df.to_csv(destination_path, index=False)
-
-
-# struktur dataset: time, open, high, low, close, volume
-# struct/class
-# class Dataset:
-#     def __init__(self, time, open, high, low, close, volume):
-#         x = time.split("-")
-#         self.time_y = x[0]
-#         self.time_m = x[1]
-#         self.time_d = x[2]
-
-#         self.open = open
-#         self.high = high
-#         self.low = low
-#         self.close = close
-#         self.volume = volume
+clean_dataset(banking_dataset, banking_dataset_path, this_path)
+clean_dataset(energy_dataset, energy_dataset_path, this_path)
