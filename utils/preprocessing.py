@@ -12,12 +12,12 @@ def convert_file_name(name, i):
     new_name = new_name + ".csv"
     return new_name
 
-def clean_dataset(dataset, dataset_path, this_path):
+def clean_dataset(dataset, dataset_path, dataset_dir):
     for i in range(len(dataset)):
         source_path = dataset_path/dataset[i]
 
         file_name = convert_file_name(dataset, i)
-        destination_path = this_path/"processed"/file_name
+        destination_path = dataset_dir/"processed"/file_name
 
         df = pd.read_csv(source_path)
 
@@ -30,9 +30,10 @@ def clean_dataset(dataset, dataset_path, this_path):
         df.to_csv(destination_path, index=False)
 
 
-this_path = Path(__file__).parent
-banking_dataset_path = this_path/"raw"/"banking"
-energy_dataset_path = this_path/"raw"/"energy"
+preprocessing_path = Path(__file__).parent.parent
+dataset_dir = preprocessing_path/"dataset"
+banking_dataset_path = dataset_dir/"raw"/"banking"
+energy_dataset_path = dataset_dir/"raw"/"energy"
 
 banking_dataset = []
 energy_dataset = []
@@ -40,5 +41,5 @@ energy_dataset = []
 list_file_name(banking_dataset, banking_dataset_path)
 list_file_name(energy_dataset, energy_dataset_path)
 
-clean_dataset(banking_dataset, banking_dataset_path, this_path)
-clean_dataset(energy_dataset, energy_dataset_path, this_path)
+clean_dataset(banking_dataset, banking_dataset_path, dataset_dir)
+clean_dataset(energy_dataset, energy_dataset_path, dataset_dir)
