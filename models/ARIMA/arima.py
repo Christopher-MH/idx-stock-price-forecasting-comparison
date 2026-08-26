@@ -79,7 +79,6 @@ def plot_results(dataset, ticker_name, testing_data, predictions, p, d, q):
 
 def arima():
     # Load data
-    dataset = []
     tickers = []
     results = []
 
@@ -97,7 +96,7 @@ def arima():
         prediction = []
 
         for i in range(len(testing_data)):
-            model = SARIMAX(history, order=(p, d, q))
+            model = SARIMAX(history, order=(p, d, q), enforce_stationarity = False, enforce_invertibility = False)
             fitted = model.fit(disp=False)
 
             yhat = fitted.forecast(steps=1)

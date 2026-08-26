@@ -1,5 +1,5 @@
 # Training(80%), Validation(10%), Testing(10%)
-def split(dataset, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1):
+def split(dataset, train_ratio = 0.8, val_ratio = 0.1, test_ratio = 0.1):
     rows = len(dataset)
 
     train_rows = int(train_ratio * rows)

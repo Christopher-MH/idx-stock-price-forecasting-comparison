@@ -12,12 +12,13 @@ A comparative study of five time-series forecasting models **(ARIMA, SARIMA, LST
     - Sort date by ASC
 3. Data Splitting
 4. Train Models
-5. Evaluate Models
+5. Test Models
+6. Evaluate Models
 
 ## Models Evaluated
 1. Traditional Time Series
-    - ARIMA
-    - SARIMA
+    - ARIMA (Auto Regressive Integrated Moving Average)
+    - SARIMA (Seasonal Auto Regressive Integrated Moving Average)
 2. Deep Learning
     - GRU (Gated Recurrent Unit)
     - LSTM (Long-Short Term Memory)
@@ -46,6 +47,8 @@ Thesis/
 │ ├── GRU/
 │ └── Transformer/
 ├── utils/          # preprocessing, data splitting, other utils
+├── results/        # results produced by model
+│ └── plots/          
 ├── requirements.txt
 └── README.md
 ```
@@ -60,8 +63,10 @@ Each CSV file contains daily OHLCV data:
 ## Tech Stack
 - Python
 - Pandas
-- TensorFlow
+- Numpy
 - Matplotlib
+- TensorFlow
+- Statsmodels
 - ***🚧 Work in progress...***
 
 ## Citation
