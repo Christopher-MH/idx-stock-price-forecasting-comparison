@@ -78,7 +78,7 @@ def plot_results(dataset, ticker_name, testing_data, predictions, order, seasona
     plt.grid(True, alpha=0.3)
 
     target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "SARIMA"
-    plt.savefig(target_path / f"{ticker_name}.png", dpi=150)
+    plt.savefig(target_path / f"{ticker_name}.png", dpi = 150)
     plt.close() 
 
 def sarima():

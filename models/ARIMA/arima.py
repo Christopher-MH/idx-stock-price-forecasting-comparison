@@ -45,7 +45,7 @@ def aic_grid_search(train_data, d):
     for i in range(4):
         for j in range(4):
             try:
-                model = SARIMAX(train_data, order=(i, d, j))
+                model = SARIMAX(train_data, order = (i, d, j))
                 fitted = model.fit(disp=False)
                 if fitted.aic < best_aic:
                     best_aic = fitted.aic
@@ -71,10 +71,10 @@ def plot_results(dataset, ticker_name, testing_data, predictions, p, d, q):
     plt.ylabel("Closing Price")
     plt.legend()
 
-    plt.grid(True, alpha=0.3)
+    plt.grid(True, alpha = 0.3)
 
     target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "ARIMA"
-    plt.savefig(target_path / f"{ticker_name}.png", dpi=150)
+    plt.savefig(target_path / f"{ticker_name}.png", dpi = 150)
     plt.close() 
 
 def arima():
