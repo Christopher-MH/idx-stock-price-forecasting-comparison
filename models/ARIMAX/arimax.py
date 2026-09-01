@@ -19,11 +19,17 @@ def list_ticker_name(tickers, processed_dataset_path):
 
 def load_data(ticker, processed_dataset_path):
     dataset = pd.read_csv(processed_dataset_path / ticker, parse_dates = ["time"], index_col = "time")
-    training_data, validation_data, testing_data = split(dataset["close"])
-    return dataset, training_data, validation_data, testing_data
+
+    exog = dataset[["open", "high", "low", "Volume"]].shift(1).dropna()
+    close = dataset["close"].loc[exog.index]
+
+    training_close, validation_close, testing_close = split(close)
+    training_exog, validation_exog, testing_exog = split(exog)
+
+    return dataset, training_close, validation_close, testing_close, training_exog, validation_exog, testing_exog
 
 def adf_test(time_series):
-    result = adfuller(time_series) # (Test Statistics, p-value, #Lags used, Number of Observations Used)
+    result = adfuller(time_series)
     return result[1]
 
 def find_d(time_series):
@@ -39,13 +45,13 @@ def find_d(time_series):
     
     return d
 
-def aic_grid_search(train_data, d):
+def aic_grid_search(training_data, training_exog, d):
     best_p, best_q = 0, 0
     best_aic = float('inf')
     for i in range(4):
         for j in range(4):
             try:
-                model = SARIMAX(train_data, order = (i, d, j))
+                model = SARIMAX(training_data, exog = training_exog, order = (i, d, j))
                 fitted = model.fit(disp=False)
                 if fitted.aic < best_aic:
                     best_aic = fitted.aic
@@ -66,62 +72,62 @@ def plot_results(dataset, ticker_name, testing_data, predictions, p, d, q):
     plt.plot(testing_data.index, predictions, label = "Predicted", color = "red", linewidth = 1.5, linestyle = "--")
     plt.axvline(x = testing_data.index[0], color = "blue", linestyle = ":", alpha = 0.5, label = "Training cutoff")
 
-    plt.title(f"ARIMA({p}, {d}, {q}) - {ticker_name} Daily Price Prediction")
+    plt.title(f"ARIMAX({p}, {d}, {q}) - {ticker_name} Daily Price Prediction")
     plt.xlabel("Date")
     plt.ylabel("Closing Price")
     plt.legend()
 
     plt.grid(True, alpha = 0.3)
 
-    target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "ARIMA"
+    target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "ARIMAX"
     plt.savefig(target_path / f"{ticker_name}.png", dpi = 150)
     plt.close() 
 
-def arima():
-    # Load data
+def arimax():
     tickers = []
     results = []
 
     processed_dataset_path = Path(__file__).parent.parent.parent / "dataset" / "processed"
     list_ticker_name(tickers, processed_dataset_path)
     for ticker in tickers:
-        dataset, training_data, validation_data, testing_data = load_data(ticker, processed_dataset_path)
+        dataset, training_close, validation_close, testing_close, training_exog, validation_exog, testing_exog = load_data(ticker, processed_dataset_path)
 
-        # Find best parameter
-        d = find_d(training_data)
-        p, q = aic_grid_search(training_data, d)
+        d = find_d(training_close)
+        p, q = aic_grid_search(training_close, training_exog, d)
 
         # Model
-        history = list(training_data.values) + list(validation_data.values)
+        history = list(training_close.values) + list(validation_close.values)
+        exog_history = list(training_exog.values) + list(validation_exog.values)
         prediction = []
 
-        for i in range(len(testing_data)):
-            model = SARIMAX(history, order=(p, d, q), enforce_stationarity = False, enforce_invertibility = False)
+        for i in range(len(testing_close)):
+            model = SARIMAX(history, exog = exog_history, order = (p, d, q), enforce_stationarity = False, enforce_invertibility = False)
             fitted = model.fit(disp=False)
 
-            yhat = fitted.forecast(steps=1)
+            current_exog = testing_exog.values[i].reshape(1, -1)
+            yhat = fitted.forecast(steps = 1, exog = current_exog)
             prediction.append(yhat[0])
 
-            actual = testing_data.iloc[i]
-            history.append(actual)
+            history.append(testing_close.iloc[i])
+            exog_history.append(testing_exog.values[i])
 
         # Evaluation
         predictions = np.array(prediction)
-        actuals = testing_data.values
+        actuals = testing_close.values
         mae, mse, rmse, mape = evaluate(predictions, actuals)
 
         ticker_name = ticker.replace(".csv", "")
         results.append({
             "ticker": ticker_name,
-            "model": "arima",
+            "model": "arimax",
             "MAE": mae, "MSE": mse, "RMSE": rmse, "MAPE": mape,
             "parameter": f"({p},{d},{q})",
         })
 
         # Plot
-        plot_results(dataset, ticker_name, testing_data, predictions, p, d, q)
+        plot_results(dataset, ticker_name, testing_close, predictions, p, d, q)
 
     target_path = Path(__file__).parent.parent.parent / "results"
-    pd.DataFrame(results).to_csv(target_path / "ARIMA_evaluation.csv", index = False)
+    pd.DataFrame(results).to_csv(target_path / "ARIMAX_evaluation.csv", index = False)
 
-arima()
+arimax()
