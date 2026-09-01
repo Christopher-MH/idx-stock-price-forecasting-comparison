@@ -14,7 +14,7 @@ import pickle
 from sklearn.preprocessing import MinMaxScaler
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import GRU, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 
 def list_ticker_name(tickers, processed_dataset_path):
@@ -50,18 +50,18 @@ def plot_results(dataset, ticker_name, testing_data, real_predictions, window_si
     plt.plot(prediction_dates, real_predictions, label = "Predicted", color = "red", linewidth = 1.5, linestyle = "--")
     plt.axvline(x = testing_data.index[0], color = "blue", linestyle = ":", alpha = 0.5, label = "Training cutoff")
 
-    plt.title(f"LSTM - {ticker_name} Daily Price Prediction")
+    plt.title(f"GRU - {ticker_name} Daily Price Prediction")
     plt.xlabel("Date")
     plt.ylabel("Closing Price")
     plt.legend()
 
     plt.grid(True, alpha = 0.3)
 
-    target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "LSTM"
+    target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "GRU"
     plt.savefig(target_path / f"{ticker_name}.png", dpi = 150)
     plt.close()
 
-def lstm():
+def gru():
     tickers = []
     results = []
 
@@ -81,9 +81,9 @@ def lstm():
 
         # Build
         model = Sequential()
-        model.add(LSTM(128, return_sequences = True, input_shape = (window_size, 5)))
+        model.add(GRU(128, return_sequences = True, input_shape = (window_size, 5)))
         model.add(Dropout(0.15))
-        model.add(LSTM(128))
+        model.add(GRU(128))
         model.add(Dropout(0.15))
         model.add(Dense(1))
 
@@ -106,7 +106,7 @@ def lstm():
         # Test
         predictions = model.predict(X_testing)
 
-        temp_prediction = np.zeros((len(predictions), 5)) # prediction dari LSTM
+        temp_prediction = np.zeros((len(predictions), 5)) # prediction dari GRU
         temp_prediction[:, 3] = predictions[:, 0]
         real_predictions = scaler.inverse_transform(temp_prediction)[:, 3]
 
@@ -119,7 +119,7 @@ def lstm():
         ticker_name = ticker.replace(".csv", "")
         results.append({
             "ticker": ticker_name,
-            "model": "LSTM",
+            "model": "GRU",
             "MAE": mae, "MSE": mse, "RMSE": rmse, "MAPE": mape,
             "parameter": f"window = {window_size}, units = 128, layers = 2, dropout = 0.15",
         })
@@ -127,6 +127,6 @@ def lstm():
         plot_results(dataset, ticker_name, testing_data, real_predictions, window_size)
 
     target_path = Path(__file__).parent.parent.parent / "results"
-    pd.DataFrame(results).to_csv(target_path / "LSTM_evaluation.csv", index = False)
-
-lstm()
+    pd.DataFrame(results).to_csv(target_path / "GRU_evaluation.csv", index = False)
+    
+gru()

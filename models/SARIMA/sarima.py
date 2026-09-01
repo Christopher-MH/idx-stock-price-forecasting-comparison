@@ -93,7 +93,6 @@ def sarima():
 
         # Find best parameter
         d = find_d(training_data)
-        # p, q = aic_grid_search(training_data, d)
         order, seasonal = aic_grid_search(training_data, d)
 
         # Model
