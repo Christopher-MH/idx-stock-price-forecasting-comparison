@@ -23,7 +23,7 @@ def load_data(ticker, processed_dataset_path):
     return dataset, training_data, validation_data, testing_data
 
 def adf_test(time_series):
-    result = adfuller(time_series) # (Test Statistics, p-value, #Lags used, Number of Observations Used)
+    result = adfuller(time_series)
     return result[1]
 
 def find_d(time_series):
@@ -39,16 +39,16 @@ def find_d(time_series):
     
     return d
 
-def aic_grid_search(train_data, d):
+def bic_grid_search(train_data, d):
     best_p, best_q = 0, 0
-    best_aic = float('inf')
+    best_bic = float('inf')
     for i in range(4):
         for j in range(4):
             try:
-                model = SARIMAX(train_data, order = (i, d, j))
-                fitted = model.fit(disp=False)
-                if fitted.aic < best_aic:
-                    best_aic = fitted.aic
+                model = SARIMAX(train_data, order = (i, d, j), enforce_stationarity = False, enforce_invertibility = False)
+                fitted = model.fit(disp = False)
+                if fitted.bic < best_bic:
+                    best_bic = fitted.bic
                     best_p = i
                     best_q = j
 
@@ -89,17 +89,17 @@ def arima():
 
         # Find best parameter
         d = find_d(training_data)
-        p, q = aic_grid_search(training_data, d)
+        p, q = bic_grid_search(training_data, d)
 
         # Model
         history = list(training_data.values) + list(validation_data.values)
         prediction = []
 
         for i in range(len(testing_data)):
-            model = SARIMAX(history, order=(p, d, q), enforce_stationarity = False, enforce_invertibility = False)
-            fitted = model.fit(disp=False)
+            model = SARIMAX(history, order = (p, d, q), enforce_stationarity = False, enforce_invertibility = False)
+            fitted = model.fit(disp = False)
 
-            yhat = fitted.forecast(steps=1)
+            yhat = fitted.forecast(steps = 1)
             prediction.append(yhat[0])
 
             actual = testing_data.iloc[i]
