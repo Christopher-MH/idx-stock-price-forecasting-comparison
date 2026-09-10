@@ -22,7 +22,7 @@ Other parameters (ADF threshold = 0.05, maximum d = 2) are held fixed, following
 | BIC_0-5 | BIC | 0–5 |
 | BIC_0-9 | BIC | 0–9 |
 
-Each configuration is run across all 10 tickers using an (80% training/10% validation/10% testing) split.
+Each configuration is run across all 10 tickers using a (80% training/10% validation/10% testing) split.
 
 ## 3. Results by Configuration
 ### 3.1 Average Metrics per Configuration

@@ -18,7 +18,7 @@ def list_ticker_name(tickers, processed_dataset_path):
         tickers.append(f.name)
 
 def load_data(ticker, processed_dataset_path):
-    dataset = pd.read_csv(processed_dataset_path / ticker, parse_dates = ["time"], index_col = "time")
+    dataset = pd.read_csv(processed_dataset_path / ticker, parse_dates=["time"], index_col="time")
     training_data, validation_data, testing_data = split(dataset["close"])
     return dataset, training_data, validation_data, testing_data
 
@@ -33,25 +33,34 @@ def find_d(time_series):
         p_value = adf_test(current)
         if p_value <= 0.05 or d >= 2:
             break
+
         current = current.diff().dropna()
         d += 1
+
     return d
 
-def grid_search(train_data, d, max_pq, criterion):
-    best_p, best_q = 0, 0
+def grid_search(train_data, d, s, criterion, D = 0):
+    best_pdq = (0, d, 0)
+    best_seasonal = (0, D, 0, s)
     best_score = float('inf')
-    for i in range(max_pq):
-        for j in range(max_pq):
-            try:
-                model = SARIMAX(train_data, order = (i, d, j), enforce_stationarity = False, enforce_invertibility = False)
-                fitted = model.fit(disp = False)
-                score = fitted.aic if criterion == "AIC" else fitted.bic
-                if score < best_score:
-                    best_score = score
-                    best_p, best_q = i, j
-            except Exception:
-                continue
-    return best_p, best_q
+    
+    for p in range(4):
+        for q in range(4):
+            for P in range(4):
+                for Q in range(4):
+                    try:
+                        model = SARIMAX(train_data, order = (p, d, q), seasonal_order = (P, D, Q, s), enforce_stationarity = False, enforce_invertibility = False)
+                        fitted = model.fit(disp = False)
+                        score = fitted.aic if criterion == "AIC" else fitted.bic
+                        if score < best_score:
+                            best_score = score
+                            best_pdq = (p, d, q)
+                            best_seasonal = (P, D, Q, s)
+
+                    except Exception:
+                        continue
+
+    return best_pdq, best_seasonal
 
 def run_config(config, tickers, processed_dataset_path):
     config_results = []
@@ -59,14 +68,17 @@ def run_config(config, tickers, processed_dataset_path):
         dataset, training_data, validation_data, testing_data = load_data(ticker, processed_dataset_path)
 
         d = find_d(training_data)
-        p, q = grid_search(training_data, d, config["max_pq"], config["criterion"])
+        order, seasonal = grid_search(training_data, d, config["s"], config["criterion"])
 
         history = list(training_data.values) + list(validation_data.values)
         prediction = []
         for i in range(len(testing_data)):
-            model = SARIMAX(history, order = (p, d, q), enforce_stationarity = False, enforce_invertibility = False)
-            fitted = model.fit(disp = False)
-            prediction.append(fitted.forecast(steps = 1)[0])
+            try:
+                model = SARIMAX(history, order = order, seasonal_order = seasonal, enforce_stationarity = False, enforce_invertibility = False)
+                fitted = model.fit(disp = False)
+                prediction.append(fitted.forecast(steps = 1)[0])
+            except Exception:
+                prediction.append(prediction[-1] if prediction else history[-1])
             history.append(testing_data.iloc[i])
 
         predictions = np.array(prediction)
@@ -76,9 +88,9 @@ def run_config(config, tickers, processed_dataset_path):
         config_results.append({
             "config": config["name"],
             "criterion": config["criterion"],
-            "range": f"0-{config['max_pq'] - 1}",
+            "s": config["s"],
             "ticker": ticker.replace(".csv", ""),
-            "order": f"({p},{d},{q})",
+            "order": f"{order}{seasonal}",
             "MAE": mae, "MSE": mse, "RMSE": rmse, "MAPE": mape,
         })
     return config_results
@@ -88,7 +100,7 @@ def plot_comparison(df, output_path):
     metrics = ["MAE", "MSE", "RMSE", "MAPE"]
 
     fig, axes = plt.subplots(2, 2, figsize = (14, 10), constrained_layout = True)
-    fig.suptitle("ARIMA Tuning - Average Metrics per Configuration", fontsize = 14)
+    fig.suptitle("SARIMA Tuning - Average Metrics per Configuration", fontsize = 14)
 
     for ax, metric in zip(axes.flat, metrics):
         avg = df.groupby("config")[metric].mean().reset_index()
@@ -103,19 +115,17 @@ def plot_comparison(df, output_path):
         for i, v in enumerate(avg[metric]):
             ax.text(i, v, f"{v:.2f}", ha = "center", va = "bottom", fontsize = 8)
 
-    fig.savefig(output_path / "arima_tuning_comparison.png", dpi = 150)
+    fig.savefig(output_path / "sarima_tuning_comparison.png", dpi = 150)
     plt.close()
 
 
-def arima_tuning():
-    # 6 configurations = 2 information criteria x 3 ranges
+def sarima_tuning():
+    # 6 configurations = 2 information criteria x 2 seasonal periods
     configs = [
-        {"name": "AIC_0-3", "criterion": "AIC", "max_pq": 4},
-        {"name": "AIC_0-5", "criterion": "AIC", "max_pq": 6},
-        {"name": "AIC_0-9", "criterion": "AIC", "max_pq": 10},
-        {"name": "BIC_0-3", "criterion": "BIC", "max_pq": 4},
-        {"name": "BIC_0-5", "criterion": "BIC", "max_pq": 6},
-        {"name": "BIC_0-9", "criterion": "BIC", "max_pq": 10},
+        # {"name": "AIC_5",  "criterion": "AIC", "s": 5},
+        # {"name": "AIC_20", "criterion": "AIC", "s": 20},
+        # {"name": "BIC_5",  "criterion": "BIC", "s": 5},
+        {"name": "BIC_20", "criterion": "BIC", "s": 20},
     ]
 
     tickers = []
@@ -130,9 +140,9 @@ def arima_tuning():
         config_results = run_config(config, tickers, processed_dataset_path)
         all_results.extend(config_results)
 
-        pd.DataFrame(all_results).to_csv(output_path / "arima_tuning.csv", index = False)
+        pd.DataFrame(all_results).to_csv(output_path / "sarima_tuning.csv", index=False)
 
     df = pd.DataFrame(all_results)
     plot_comparison(df, output_path)
 
-arima_tuning()
+sarima_tuning()

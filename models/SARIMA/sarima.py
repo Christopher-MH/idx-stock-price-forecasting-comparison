@@ -23,7 +23,7 @@ def load_data(ticker, processed_dataset_path):
     return dataset, training_data, validation_data, testing_data
 
 def adf_test(time_series):
-    result = adfuller(time_series) # (Test Statistics, p-value, #Lags used, Number of Observations Used)
+    result = adfuller(time_series)
     return result[1]
 
 def find_d(time_series):
@@ -39,20 +39,20 @@ def find_d(time_series):
     
     return d
 
-def aic_grid_search(train_data, d, m = 5, D = 0):
+def bic_grid_search(train_data, d, m = 5, D = 0):
     best_pdq = (0, d, 0)
     best_seasonal = (0, D, 0, m)
-    best_aic = float('inf')
+    best_bic = float('inf')
 
-    for p in range(3):
-        for q in range(3):
-            for P in range(3):
-                for Q in range(3):
+    for p in range(4):
+        for q in range(4):
+            for P in range(4):
+                for Q in range(4):
                     try:
-                        model = SARIMAX(train_data, order=(p, d, q), seasonal_order = (P, D, Q, m))
-                        fitted = model.fit(disp=False)
-                        if fitted.aic < best_aic:
-                            best_aic = fitted.aic
+                        model = SARIMAX(train_data, order = (p, d, q), seasonal_order = (P, D, Q, m), enforce_stationarity = False, enforce_invertibility = False)
+                        fitted = model.fit(disp = False)
+                        if fitted.bic < best_bic:
+                            best_bic = fitted.bic
                             best_pdq = (p, d, q)
                             best_seasonal = (P, D, Q, m)
 
@@ -75,7 +75,7 @@ def plot_results(dataset, ticker_name, testing_data, predictions, order, seasona
     plt.ylabel("Closing Price")
     plt.legend()
 
-    plt.grid(True, alpha=0.3)
+    plt.grid(True, alpha = 0.3)
 
     target_path = Path(__file__).parent.parent.parent / "results" / "plots" / "SARIMA"
     plt.savefig(target_path / f"{ticker_name}.png", dpi = 150)
@@ -91,9 +91,8 @@ def sarima():
     for ticker in tickers:
         dataset, training_data, validation_data, testing_data = load_data(ticker, processed_dataset_path)
 
-        # Find best parameter
         d = find_d(training_data)
-        order, seasonal = aic_grid_search(training_data, d)
+        order, seasonal = bic_grid_search(training_data, d)
 
         # Model
         history = list(training_data.values) + list(validation_data.values)
