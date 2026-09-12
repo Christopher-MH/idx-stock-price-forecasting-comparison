@@ -47,7 +47,7 @@ This table shows whether different criteria / ranges select different orders.
 | PGAS | (1,0,3)(1,0,3,5) | (3,0,3)(1,0,3,20) | (1,0,1)(0,0,3,5) | (3,0,0)(3,0,0,20) |
 | PTBA | (0,1,3)(1,0,3,5) | (0,1,3)(0,0,3,20) | (0,1,3)(0,0,3,5) | (0,1,3)(0,0,3,20) |
 
-Runtime: 4800 seconds (AIC_5), 72000 seconds (AIC_20), 4200 seconds (BIC_5), 43589.03 seconds (BIC_20)
+Runtime: 117.389,03 seconds
 
 ### 3.3 Plot
 The results produced by tuning can be compiled and summarised into a 2x2 plot:
