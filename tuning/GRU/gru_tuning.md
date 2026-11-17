@@ -2,7 +2,7 @@
 Documentation of hyperparameter tuning experiments for the LSTM model on daily stock price forecasting. The goal of this experiment is to test the model's sensitivity to hyperparameter choices, rather than to maximize absolute performance.
 
 ## 1. Parameters
-LSTM has more parameters that can be tested (p, d, q, P, D, Q, S) than LSTM. However, based on the tuning experiment of LSTM, widening the grid search range beyond 0-3 provided no improvement in accuracy. The tuning focuses on the seasonal-specific parameters unique to LSTM and the selection criterion.
+GRU has more parameters that can be tested (p, d, q, P, D, Q, S) than LSTM. However, based on the tuning experiment of LSTM, widening the grid search range beyond 0-3 provided no improvement in accuracy. The tuning focuses on the seasonal-specific parameters unique to LSTM and the selection criterion.
 
 This experiment tests the following parameters:
 | No | Parameter | Values Tested | Reason |

@@ -156,11 +156,9 @@ def gru_tuning():
     output_path = Path(__file__).parent / "results"
     output_path.mkdir(parents = True, exist_ok = True)
 
-    # --- RESUME LOGIC: load already-completed configs and skip them ---
     full_csv = output_path / "gru_tuning_full.csv"
     if full_csv.exists():
         existing = pd.read_csv(full_csv)
-        # keep only fully-complete configs (all 10 tickers); drop any partial one
         counts = existing.groupby("config").size()
         complete_configs = set(counts[counts >= len(tickers)].index)
         existing = existing[existing["config"].isin(complete_configs)]
@@ -170,7 +168,6 @@ def gru_tuning():
     else:
         all_results = []
         done_configs = set()
-    # -----------------------------------------------------------------
 
     for idx, config in enumerate(configs, 1):
         if config["name"] in done_configs:
@@ -194,6 +191,6 @@ def gru_tuning():
     plot_top(top5, output_path)
 
     print("\nTop 5 configurations by average MAPE:")
-    print(top5[["config", "window", "units", "layers", "dropout", "MAPE"]].to_string(index=False))
+    print(top5[["config", "window", "units", "layers", "dropout", "MAPE"]].to_string(index = False))
 
 gru_tuning()

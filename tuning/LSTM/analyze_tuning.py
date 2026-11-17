@@ -17,14 +17,14 @@ def analyze_tuning(csv_path):
 
 
     output_dir = Path(csv_path).parent
-    avg_metrics.to_csv(output_dir / "sarima_tuning_averages.csv", index = False)
-    orders.to_csv(output_dir / "sarima_tuning_orders.csv")
+    avg_metrics.to_csv(output_dir / "lstm_tuning_averages.csv", index = False)
+    orders.to_csv(output_dir / "lstm_tuning_orders.csv")
 
     return avg_metrics, orders
 
 
 if __name__ == "__main__":
-    csv_path = Path(__file__).parent / "results" / "sarima_tuning.csv"
+    csv_path = Path(__file__).parent / "results" / "lstm_tuning_top5.csv"
 
     if len(sys.argv) > 1:
         csv_path = Path(sys.argv[1])

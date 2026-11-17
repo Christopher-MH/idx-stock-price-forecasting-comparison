@@ -1,6 +1,4 @@
 import sys
-import warnings
-warnings.filterwarnings("ignore")
 
 import numpy as np
 import tensorflow as tf
@@ -156,11 +154,9 @@ def lstm_tuning():
     output_path = Path(__file__).parent / "results"
     output_path.mkdir(parents = True, exist_ok = True)
 
-    # --- RESUME LOGIC: load already-completed configs and skip them ---
     full_csv = output_path / "lstm_tuning_full.csv"
     if full_csv.exists():
         existing = pd.read_csv(full_csv)
-        # keep only fully-complete configs (all 10 tickers); drop any partial one
         counts = existing.groupby("config").size()
         complete_configs = set(counts[counts >= len(tickers)].index)
         existing = existing[existing["config"].isin(complete_configs)]
@@ -170,7 +166,6 @@ def lstm_tuning():
     else:
         all_results = []
         done_configs = set()
-    # -----------------------------------------------------------------
 
     for idx, config in enumerate(configs, 1):
         if config["name"] in done_configs:

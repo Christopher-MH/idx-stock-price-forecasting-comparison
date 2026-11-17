@@ -9,7 +9,6 @@ from evaluation import evaluate
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 
 from sklearn.preprocessing import MinMaxScaler
 
@@ -72,7 +71,7 @@ def lstm():
 
         training_scaled, validation_scaled, testing_scaled, scaler = minmax_scaling(training_data, validation_data, testing_data)
 
-        window_size = 30
+        window_size = 20
         X_training, y_training = create_windows(training_scaled, window_size)
         X_validation, y_validation = create_windows(validation_scaled, window_size)
 
@@ -81,12 +80,9 @@ def lstm():
 
         # Build
         model = Sequential()
-        model.add(LSTM(128, return_sequences = True, input_shape = (window_size, 5)))
-        model.add(Dropout(0.15))
-        model.add(LSTM(128))
-        model.add(Dropout(0.15))
+        model.add(LSTM(128, input_shape = (window_size, 5)))
+        model.add(Dropout(0.1))
         model.add(Dense(1))
-
         model.compile(optimizer = 'adam', loss = 'mse')
 
         # Train
@@ -121,7 +117,7 @@ def lstm():
             "ticker": ticker_name,
             "model": "LSTM",
             "MAE": mae, "MSE": mse, "RMSE": rmse, "MAPE": mape,
-            "parameter": f"window = {window_size}, units = 128, layers = 2, dropout = 0.15",
+            "parameter": f"window = {window_size}, units = 128, layers = 1, dropout = 0.1",
         })
 
         plot_results(dataset, ticker_name, testing_data, real_predictions, window_size)

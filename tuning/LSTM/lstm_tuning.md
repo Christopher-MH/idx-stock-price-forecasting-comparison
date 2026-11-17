@@ -2,117 +2,71 @@
 Documentation of hyperparameter tuning experiments for the LSTM model on daily stock price forecasting. The goal of this experiment is to test the model's sensitivity to hyperparameter choices, rather than to maximize absolute performance.
 
 ## 1. Parameters
-LSTM has more parameters that can be tested (p, d, q, P, D, Q, S) than LSTM. However, based on the tuning experiment of LSTM, widening the grid search range beyond 0-3 provided no improvement in accuracy. The tuning focuses on the seasonal-specific parameters unique to LSTM and the selection criterion.
+Unlike traditional models, LSTM has no order selected via an information criterion. Its behavior is instead governed by architecture and training hyperparameters. This experiment tunes the four most influential architecture hyperparameters through a full grid search.
+
+Because neural networks involve stochastic elements, random weight initialization, dropout, and batch shuffling, a fixed random seed (seed = 1) was set to ensure reproducibility and a fair comparison across configurations.
+
+This experiment tunes the four most influential architecture hyperparameters through a full grid search.
 
 This experiment tests the following parameters:
 | No | Parameter | Values Tested | Reason |
 |---|---|---|---|
-| 1 | Window Size | 30, 60, 90 |  |
-| 2 | Units | 32, 64, 128 |  |
-| 3 | Layers | 1, 2, 3 |  |
-| 4 | Dropout Rate | 0.1, 0.2, 0.3, 0.4 |  |
+| 1 | Window Size | 20, 40, 60 | To test how much historical context (in trading days) the model uses per prediction |
+| 2 | Units | 32, 64, 128 | To test model capacity of neurons per layer, more units capture more complex patterns but risk overfitting |
+| 3 | Layers | 1, 2, 3 | To test model depth, more layers capture higher-level patterns but increase overfitting risk on limited data |
+| 4 | Dropout Rate | 0.1, 0.2, 0.3, 0.4 | To test the strength of regularization against overfitting |
 
-Other parameters (ADF threshold = 0.05, maximum d = 2) are held fixed, following standard practice in comparable literatures and research papers. To save time and computing power, grid search range for LSTM are fixed at 0-3 since it has been tested in LSTM before.
+Following standard practice, other training parameters like batch size, Adam Optimizer, and max epochs are set with a fixed value.
 
 ## 2. Experiment Configurations
-| Configuration | Information Criterion | Seasonality |
-|---|---|---|
-| Combination_001 | AIC | 5 |
-| Combination_002 | AIC | 20 |
-| Combination_003 | BIC | 5 |
-| Combination_004 | BIC | 20 |
-
-Each configuration is run across all 10 tickers using a (80% training/10% validation/10% testing) split.
+A full grid search of the four parameters produces 3 × 3 × 3 × 4 = 108 configurations, named Combination_001 to Combination_108. Each configuration is run across all 10 tickers using an (80% training / 10% validation / 10% testing) split. Due to the large number of configurations, only the top 5 (lowest average MAPE) are highlighted below; the complete ranking is available in the raw results.
 
 ## 3. Results by Configuration
-### 3.1 Average Metrics per Configuration
-| Configuration | MAE (avg) | MSE (avg) | RMSE (avg) | MAPE (avg) |
-|---|---|---|---|---|
-| AIC_5 | 55.0788 | 9387.5498 | 78.2428 | 1.3812 |
-| AIC_20 | 55.1618 | 9431.6902 | 78.3329 | 1.3842 |
-| BIC_5 | 55.3181 | 9316.2038 | 78.2773 | 1.4009 |
-| BIC_20 | 55.1382 | 9435.877 | 78.3542 | 1.3836 |
+### 3.1 Top 5 Configurations by Average MAPE
+| Rank | Configuration | Window | Units | Layers | Dropout | MAE | MSE | RMSE | MAPE |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | Combination_025 | 20 | 128 | 1 | 0.1 | 62.2989 | 11978.0320 | 88.5785 | 1.5553 |
+| 2 | Combination_013 | 20 | 64 | 1 | 0.1 | 69.8529 | 15299.1379 | 95.4439 | 1.6025 |
+| 3 | Combination_061 | 40 | 128 | 1 | 0.1 | 64.1899 | 11871.8813 | 89.2680 | 1.6161 |
+| 4 | Combination_065 | 40 | 128 | 2 | 0.1 | 65.2806 | 12529.3717 | 89.9015 | 1.6260 |
+| 5 | Combination_028 | 20 | 128 | 1 | 0.4 | 73.3894 | 17914.0778 | 100.0105 | 1.6524 |
 
-### 3.2 Selected Orders per Configuration
-This table shows whether different criteria / ranges select different orders.
+The best configuration was Combination_025 (window=20, units=128, layers=1, dropout=0.1) with an average MAPE of 1.5553%. Across all 108 configurations, MAPE ranged from 1.5553% (best) to 3.1037% (worst) — a spread of about 1.55 percentage points, indicating that unlike the traditional models, LSTM performance is genuinely sensitive to hyperparameter choices.
 
-| Ticker | AIC_5 | AIC_20 | BIC_5 | BIC_20 |
-|---|---|---|---|---|
-| ADRO |  |  |  |  |
-| BBCA |  |  |  |  |
-| BBNI |  |  |  |  |
-| BBRI |  |  |  |  |
-| BBTN |  |  |  |  |
-| BMRI |  |  |  |  |
-| ITMG |  |  |  |  |
-| MEDC |  |  |  |  |
-| PGAS |  |  |  |  |
-| PTBA |  |  |  |  |
+### 3.2 Plot
+The top 5 configurations by average MAPE are summarised in the bar chart below:
 
-Runtime: 4800 seconds (AIC_5), 72000 seconds (AIC_20), 4200 seconds (BIC_5), 43589.03 seconds (BIC_20)
+![LSTM Tuning Top 5](results/lstm_tuning_top5.png)
 
-### 3.3 Plot
-The results produced by tuning can be compiled and summarised into a 2x2 plot:
+### 3.3 Effect of Each Parameter
+The average MAPE grouped by each parameter value (across all configurations) reveals clear trends:
 
-![LSTM Tuning Plot](results/LSTM_tuning_comparison.png)
+| Window | Avg MAPE | Units | Avg MAPE | Layers | Avg MAPE | Dropout | Avg MAPE |
+|---|---|---|---|---|---|---|---|
+| 20 | 2.0408 | 32 | 2.3632 | 1 | 1.8145 | 0.1 | 1.9111 |
+| 40 | 2.0794 | 64 | 2.0698 | 2 | 2.0877 | 0.2 | 2.0412 |
+| 60 | 2.1801 | 128 | 1.8673 | 3 | 2.3982 | 0.3 | 2.1542 |
+| | | | | | | 0.4 | 2.2939 |
 
 ## 4. Analysis
-This is a brief analysis of the results produced by tuning.
 
-### 4.1 Effect of Selection Criterion (AIC vs BIC)
-The use of AIC or BIC as the selection criterion have negligible effect on performance. Averaged across both configurations, AIC achieved MAPE of 1.3827% MAPE and BIC 1.3923%. The difference is less than 0.01 percentage points. BIC selected simpler orders, for example in ticker PGAS: BIC_5 selected (1,0,1), where AIC_5 selected (1,0,3). However, this simplification produced no meaningful change in accuracy.
+### 4.1 Effect of Window Size
+Shorter windows performed slightly better: window=20 averaged 2.04% MAPE, window=40 averaged 2.08%, and window=60 averaged 2.18%. All top-5 configurations used a window of 20 or 40; none used 60. This suggests that for daily stock prediction, a shorter historical context (roughly 1–2 months) is sufficient, and longer windows add mostly noise rather than useful signal — consistent with the short-memory, near-random-walk nature of daily prices.
 
-### 4.2 Effect of Seasonal Period
-The seasonal period had no meaningful effect on accuracy: weekly(s=5) averaged 1.3911% MAPE and monthly(s=20) averaged 1.3839%, a difference of less than 0.01 percentage points. About 68% of all fitted models selected a seasonal autoregressive order (P) of 0, indicating the models found little to no exploitable seasonal structure. This strongly suggests daily stock prices exhibit weak seasonality at both weekly and monthly scales, consistent with their near-random-walk behavior. The seasonal component of LSTM therefore provided little benefit over the non-seasonal LSTM structure.
+### 4.2 Effect of Units
+More units improved performance: 128 units averaged 1.87% MAPE, versus 2.06% for 64 and 2.36% for 32. Every top-5 configuration except one used 128 units. This indicates the model benefits from higher capacity to capture the multivariate OHLCV relationships, and 128 units did not overfit within the tested range.
 
-### 4.3 Cross-Sector Consistency
-Under AIC_5, energy tickers averaged 1.3354% MAPE and banking tickers 1.4269%, another difference of less than 0.1 percentage points, consistent across configurations (BIC_5: energy 1.3523%, banking 1.4496%). Similar to LSTM, individual ticker characteristics influenced forecasting error more than the sector it is in.
+### 4.3 Effect of Layers
+Fewer layers performed clearly better: 1 layer averaged 1.81% MAPE, 2 layers 2.09%, and 3 layers 2.40%. Four of the top five configurations used a single LSTM layer. This is a strong and important finding: additional depth consistently *hurt* performance, almost certainly because deeper models overfit the limited training data (~1,000 examples per ticker). It confirms that a simple, shallow architecture is best suited to this data.
+
+### 4.4 Effect of Dropout Rate
+Lower dropout performed better: 0.1 averaged 1.91% MAPE, rising steadily to 2.29% at dropout 0.4. All top-5 configurations except one used dropout 0.1. Since the best models were already shallow (1 layer) and thus less prone to overfitting, heavy regularization was unnecessary and only degraded performance.
+
+### 4.5 Overall Sensitivity
+Unlike the traditional models (ARIMA/SARIMA), where all configurations performed within noise, LSTM showed genuine sensitivity to its hyperparameters, with MAPE ranging from 1.56% to 3.10% across the grid. The clear pattern is that simpler, higher-capacity-but-shallow models with light regularization performed best: short window, 128 units, 1 layer, low dropout.
 
 ## 5. Conclusion
-Each LSTM tuning generally performs the same with all four configurations producing average MAPE within a narrow band (1.3812%–1.4009%). The majority of models selected a seasonal AR order of 0, indicating minimal exploitable seasonality in daily stock prices at either weekly or monthly scales. LSTM's added seasonal complexity thus provided little benefit over the simpler LSTM model. The seasonal grid search was also computationally expensive, AIC_20 required approximately 20 hours, but yielded no accuracy gain. These findings reinforce the LSTM conclusion that daily stock prices are adequately modeled by low-order, largely non-seasonal terms and offer limited predictable structure for traditional models to exploit. BIC with weekly seasonality (s=5) was selected for consistency with the LSTM configuration and BIC's preference for simpler orders. As all configurations performed within a negligible margin (1.38%–1.40% MAPE), this choice prioritizes methodological consistency and model simplicity without sacrificing accuracy.
+The LSTM tuning revealed clear and consistent trends, in contrast to the traditional models. The best configuration was Combination_025 (window=20, units=128, layers=1, dropout=0.1), achieving an average MAPE of 1.5553%. The dominant findings were that shallower models (1 layer) substantially outperformed deeper ones, higher unit counts (128) helped, shorter windows (20) were marginally better than longer ones, and low dropout (0.1) was preferable. Together these indicate that the limited size of the daily stock dataset favors a simple, shallow, higher-capacity architecture with minimal regularization; added depth and heavy dropout consistently degraded performance through overfitting. Combination_025 was therefore selected as the configuration for the final LSTM model.
 
 ## Raw Full Results
-Complete raw results are available [here](results/LSTM_tuning.csv).
-
-| config | criterion | s | ticker | order | MAE | MSE | RMSE | MAPE |
-|---|---|---|---|---|---|---|---|---|
-| AIC_5 | AIC | 5 | ADRO |  |  |  |  |  |
-| AIC_5 | AIC | 5 | BBCA |  |  |  |  |  |
-| AIC_5 | AIC | 5 | BBNI |  |  |  |  |  |
-| AIC_5 | AIC | 5 | BBRI |  |  |  |  |  |
-| AIC_5 | AIC | 5 | BBTN |  |  |  |  |  |
-| AIC_5 | AIC | 5 | BMRI |  |  |  |  |  |
-| AIC_5 | AIC | 5 | ITMG |  |  |  |  |  |
-| AIC_5 | AIC | 5 | MEDC |  |  |  |  |  |
-| AIC_5 | AIC | 5 | PGAS |  |  |  |  |  |
-| AIC_5 | AIC | 5 | PTBA |  |  |  |  |  |
-| AIC_20 | AIC | 20 | ADRO |  | |  |  |  |
-| AIC_20 | AIC | 20 | BBCA |  | |  |  |  |
-| AIC_20 | AIC | 20 | BBNI |  | |  |  |  |
-| AIC_20 | AIC | 20 | BBRI |  | |  |  |  |
-| AIC_20 | AIC | 20 | BBTN |  | |  |  |  |
-| AIC_20 | AIC | 20 | BMRI |  | |  |  |  |
-| AIC_20 | AIC | 20 | ITMG |  | |  |  |  |
-| AIC_20 | AIC | 20 | MEDC |  | |  |  |  |
-| AIC_20 | AIC | 20 | PGAS |  | |  |  |  |
-| AIC_20 | AIC | 20 | PTBA |  | |  |  |  |
-| BIC_5 | BIC | 5 | ADRO |  |  |  |  |  |
-| BIC_5 | BIC | 5 | BBCA |  |  |  |  |  |
-| BIC_5 | BIC | 5 | BBNI |  |  |  |  |  |
-| BIC_5 | BIC | 5 | BBRI |  |  |  |  |  |
-| BIC_5 | BIC | 5 | BBTN |  |  |  |  |  |
-| BIC_5 | BIC | 5 | BMRI |  |  |  |  |  |
-| BIC_5 | BIC | 5 | ITMG |  |  |  |  |  |
-| BIC_5 | BIC | 5 | MEDC |  |  |  |  |  |
-| BIC_5 | BIC | 5 | PGAS |  |  |  |  |  |
-| BIC_5 | BIC | 5 | PTBA |  |  |  |  |  |
-| BIC_20 | BIC | 20 | ADRO |  | |  |  |  |
-| BIC_20 | BIC | 20 | BBCA |  | |  |  |  |
-| BIC_20 | BIC | 20 | BBNI |  | |  |  |  |
-| BIC_20 | BIC | 20 | BBRI |  | |  |  |  |
-| BIC_20 | BIC | 20 | BBTN |  | |  |  |  |
-| BIC_20 | BIC | 20 | BMRI |  | |  |  |  |
-| BIC_20 | BIC | 20 | ITMG |  | |  |  |  |
-| BIC_20 | BIC | 20 | MEDC |  | |  |  |  |
-| BIC_20 | BIC | 20 | PGAS |  | |  |  |  |
-| BIC_20 | BIC | 20 | PTBA |  | |  |  |  |
+Complete raw results are available in `results/lstm_tuning_full.csv` (all 108 configurations × 10 tickers) and `results/lstm_tuning_ranked.csv` (configurations ranked by average MAPE).
