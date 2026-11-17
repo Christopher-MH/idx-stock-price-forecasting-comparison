@@ -39,13 +39,13 @@ def find_d(time_series):
 
     return d
 
-def grid_search(train_data, d, s, criterion, D = 0):
+def grid_search(train_data, d, s, criterion, max_pq, D = 0):
     best_pdq = (0, d, 0)
     best_seasonal = (0, D, 0, s)
     best_score = float('inf')
     
-    for p in range(4):
-        for q in range(4):
+    for p in range(max_pq):
+        for q in range(max_pq):
             for P in range(4):
                 for Q in range(4):
                     try:
@@ -68,7 +68,7 @@ def run_config(config, tickers, processed_dataset_path):
         dataset, training_data, validation_data, testing_data = load_data(ticker, processed_dataset_path)
 
         d = find_d(training_data)
-        order, seasonal = grid_search(training_data, d, config["s"], config["criterion"])
+        order, seasonal = grid_search(training_data, d, config["s"], config["criterion"], config["max_pq"])
 
         history = list(training_data.values) + list(validation_data.values)
         prediction = []
@@ -90,6 +90,7 @@ def run_config(config, tickers, processed_dataset_path):
             "criterion": config["criterion"],
             "s": config["s"],
             "ticker": ticker.replace(".csv", ""),
+            "range": f"0-{config['max_pq'] - 1}",
             "order": f"{order}{seasonal}",
             "MAE": mae, "MSE": mse, "RMSE": rmse, "MAPE": mape,
         })
@@ -120,12 +121,12 @@ def plot_comparison(df, output_path):
 
 
 def sarima_tuning():
-    # 6 configurations = 2 information criteria x 2 seasonal periods
+    # 12 configurations = 2 information criteria x 2 seasonal periods
     configs = [
-        # {"name": "AIC_5",  "criterion": "AIC", "s": 5},
-        # {"name": "AIC_20", "criterion": "AIC", "s": 20},
-        # {"name": "BIC_5",  "criterion": "BIC", "s": 5},
-        {"name": "BIC_20", "criterion": "BIC", "s": 20},
+        {"name": "AIC_s20_0-9", "criterion": "AIC", "max_pq": 10, "s": 20},
+        {"name": "BIC_s20_0-3", "criterion": "BIC", "max_pq": 4,  "s": 20},
+        {"name": "BIC_s20_0-5", "criterion": "BIC", "max_pq": 6,  "s": 20},
+        {"name": "BIC_s20_0-9", "criterion": "BIC", "max_pq": 10, "s": 20},
     ]
 
     tickers = []
