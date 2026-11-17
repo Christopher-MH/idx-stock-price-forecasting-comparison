@@ -73,9 +73,6 @@ def run_config(config, tickers, processed_dataset_path):
         X_training, y_training = create_windows(training_scaled, window_size)
         X_validation, y_validation = create_windows(validation_scaled, window_size)
 
-        bridge = np.concatenate([validation_scaled[-window_size:], testing_scaled])
-        X_testing, y_testing = create_windows(bridge, window_size)
-
         # Build
         model = build_model(window_size, config["units"], config["layers"], config["dropout"])
 
@@ -91,15 +88,15 @@ def run_config(config, tickers, processed_dataset_path):
             verbose = 0
         )
 
-        # Test
-        predictions = model.predict(X_testing, verbose = 0)
+        # Validation
+        predictions = model.predict(X_validation, verbose = 0)
 
-        temp_prediction = np.zeros((len(predictions), 5)) # prediction dari LSTM
+        temp_prediction = np.zeros((len(predictions), 5))
         temp_prediction[:, 3] = predictions[:, 0]
         real_predictions = scaler.inverse_transform(temp_prediction)[:, 3]
 
-        temp_actual = np.zeros((len(y_testing), 5)) # actual dari Dataset
-        temp_actual[:, 3] = y_testing
+        temp_actual = np.zeros((len(y_validation), 5))
+        temp_actual[:, 3] = y_validation
         real_actuals = scaler.inverse_transform(temp_actual)[:, 3]
 
         mae, mse, rmse, mape = evaluate(real_predictions, real_actuals)
@@ -129,7 +126,6 @@ def plot_top(df_top, output_path):
     plt.close()
 
 def lstm_tuning():
-    # full grid: 3 x 3 x 3 x 4 = 108 configurations
     windows = [20, 40, 60]
     units_list = [32, 64, 128]
     layers_list = [1, 2, 3]
