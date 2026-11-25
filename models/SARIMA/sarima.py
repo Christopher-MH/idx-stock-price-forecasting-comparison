@@ -39,22 +39,22 @@ def find_d(time_series):
     
     return d
 
-def bic_grid_search(train_data, d, m = 5, D = 0):
+def aic_grid_search(train_data, d, s = 5, D = 0):
     best_pdq = (0, d, 0)
-    best_seasonal = (0, D, 0, m)
-    best_bic = float('inf')
+    best_seasonal = (0, D, 0, s)
+    best_aic = float('inf')
 
     for p in range(4):
         for q in range(4):
             for P in range(4):
                 for Q in range(4):
                     try:
-                        model = SARIMAX(train_data, order = (p, d, q), seasonal_order = (P, D, Q, m), enforce_stationarity = False, enforce_invertibility = False)
+                        model = SARIMAX(train_data, order = (p, d, q), seasonal_order = (P, D, Q, s), enforce_stationarity = False, enforce_invertibility = False)
                         fitted = model.fit(disp = False)
-                        if fitted.bic < best_bic:
-                            best_bic = fitted.bic
+                        if fitted.aic < best_aic:
+                            best_aic = fitted.aic
                             best_pdq = (p, d, q)
-                            best_seasonal = (P, D, Q, m)
+                            best_seasonal = (P, D, Q, s)
 
                     except Exception as e:
                         continue
@@ -92,7 +92,7 @@ def sarima():
         dataset, training_data, validation_data, testing_data = load_data(ticker, processed_dataset_path)
 
         d = find_d(training_data)
-        order, seasonal = bic_grid_search(training_data, d)
+        order, seasonal = aic_grid_search(training_data, d)
 
         # Model
         history = list(training_data.values) + list(validation_data.values)

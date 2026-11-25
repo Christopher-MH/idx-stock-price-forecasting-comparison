@@ -13,15 +13,13 @@ def analyze_tuning(csv_path):
         .reset_index()
     )
 
-    orders = df.pivot(index = "ticker", columns = "config", values = "order")
-
+    top5 = avg_metrics.sort_values("MAPE").head(5)
 
     output_dir = Path(csv_path).parent
     avg_metrics.to_csv(output_dir / "sarima_tuning_averages.csv", index = False)
-    orders.to_csv(output_dir / "sarima_tuning_orders.csv")
+    top5.to_csv(output_dir / "sarima_tuning_top5.csv", index = False)
 
-    return avg_metrics, orders
-
+    return avg_metrics, top5
 
 if __name__ == "__main__":
     csv_path = Path(__file__).parent / "results" / "sarima_tuning.csv"

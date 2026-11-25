@@ -71,7 +71,7 @@ def lstm():
 
         training_scaled, validation_scaled, testing_scaled, scaler = minmax_scaling(training_data, validation_data, testing_data)
 
-        window_size = 20
+        window_size = 40
         X_training, y_training = create_windows(training_scaled, window_size)
         X_validation, y_validation = create_windows(validation_scaled, window_size)
 
@@ -80,7 +80,9 @@ def lstm():
 
         # Build
         model = Sequential()
-        model.add(LSTM(128, input_shape = (window_size, 5)))
+        model.add(LSTM(128, return_sequences = True, input_shape = (window_size, 5)))
+        model.add(Dropout(0.1))
+        model.add(LSTM(128, return_sequences = False))
         model.add(Dropout(0.1))
         model.add(Dense(1))
         model.compile(optimizer = 'adam', loss = 'mse')
@@ -95,9 +97,6 @@ def lstm():
             batch_size = 32,
             callbacks = [early_stop]
         )
-
-        # with open('model.pkl', 'wb') as file:
-        #     pickle.dump(model, file)
 
         # Test
         predictions = model.predict(X_testing)
@@ -117,7 +116,7 @@ def lstm():
             "ticker": ticker_name,
             "model": "LSTM",
             "MAE": mae, "MSE": mse, "RMSE": rmse, "MAPE": mape,
-            "parameter": f"window = {window_size}, units = 128, layers = 1, dropout = 0.1",
+            "parameter": f"window = {window_size}, units = 128, layers = 2, dropout = 0.1",
         })
 
         plot_results(dataset, ticker_name, testing_data, real_predictions, window_size)

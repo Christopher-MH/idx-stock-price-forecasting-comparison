@@ -9,7 +9,6 @@ from evaluation import evaluate
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 
 from sklearn.preprocessing import MinMaxScaler
 
@@ -72,7 +71,7 @@ def gru():
 
         training_scaled, validation_scaled, testing_scaled, scaler = minmax_scaling(training_data, validation_data, testing_data)
 
-        window_size = 20
+        window_size = 40
         X_training, y_training = create_windows(training_scaled, window_size)
         X_validation, y_validation = create_windows(validation_scaled, window_size)
 
@@ -83,10 +82,9 @@ def gru():
         model = Sequential()
         model.add(GRU(128, return_sequences = True, input_shape = (window_size, 5)))
         model.add(Dropout(0.1))
-        model.add(GRU(128))
+        model.add(GRU(128, return_sequences = False))
         model.add(Dropout(0.1))
         model.add(Dense(1))
-
         model.compile(optimizer = 'adam', loss = 'mse')
 
         # Train
@@ -100,17 +98,14 @@ def gru():
             callbacks = [early_stop]
         )
 
-        # with open('model.pkl', 'wb') as file:
-        #     pickle.dump(model, file)
-
         # Test
         predictions = model.predict(X_testing)
 
-        temp_prediction = np.zeros((len(predictions), 5)) # prediction dari GRU
+        temp_prediction = np.zeros((len(predictions), 5))
         temp_prediction[:, 3] = predictions[:, 0]
         real_predictions = scaler.inverse_transform(temp_prediction)[:, 3]
 
-        temp_actual = np.zeros((len(y_testing), 5)) # actual dari Dataset
+        temp_actual = np.zeros((len(y_testing), 5))
         temp_actual[:, 3] = y_testing
         real_actuals = scaler.inverse_transform(temp_actual)[:, 3]
 

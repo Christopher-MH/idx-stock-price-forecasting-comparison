@@ -138,7 +138,7 @@ def lstm_tuning():
             for l in layers_list:
                 for dr in dropouts:
                     configs.append({
-                        "name": f"Combination_{counter:03d}",
+                        "name": f"W{w}_U{u}_L{l}_D{dr}",
                         "window": w, "units": u, "layers": l, "dropout": dr,
                     })
                     counter += 1
@@ -158,7 +158,7 @@ def lstm_tuning():
         existing = existing[existing["config"].isin(complete_configs)]
         all_results = existing.to_dict("records")
         done_configs = complete_configs
-        print(f"Resuming — {len(done_configs)} configs already complete, skipping them.")
+        print(f"Resuming {len(done_configs)} configs already complete, skipping them.")
     else:
         all_results = []
         done_configs = set()
@@ -177,14 +177,11 @@ def lstm_tuning():
 
     avg = df.groupby(["config", "window", "units", "layers", "dropout"])[["MAE", "MSE", "RMSE", "MAPE"]].mean().round(4).reset_index()
     avg_ranked = avg.sort_values("MAPE").reset_index(drop = True)
-
     avg_ranked.to_csv(output_path / "lstm_tuning_ranked.csv", index = False)
+    
     top5 = avg_ranked.head(5)
     top5.to_csv(output_path / "lstm_tuning_top5.csv", index = False)
 
     plot_top(top5, output_path)
-
-    print("\nTop 5 configurations by average MAPE:")
-    print(top5[["config", "window", "units", "layers", "dropout", "MAPE"]].to_string(index=False))
 
 lstm_tuning()
